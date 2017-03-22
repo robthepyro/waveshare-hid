@@ -17,9 +17,12 @@
 
  */
 
-#include <libopencm3/gd32/i2c.h>
-#include <libopencm3/gd32/gpio.h>
-#include <libopencm3/gd32/rcc.h>
+//#include <libopencm3/gd32/i2c.h>
+//#include <libopencm3/gd32/gpio.h>
+//#include <libopencm3/gd32/rcc.h>
+#include <libopencm3/stm32/i2c.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
 #include "usb_device.h"
 #include "systick.h"
 #include "gt811.h"

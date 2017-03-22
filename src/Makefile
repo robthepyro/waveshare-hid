@@ -25,4 +25,5 @@ SOURCES = $(filter-out $(BINARY).c, $(wildcard *.c))
 OBJS = $(SOURCES:.c=.o)
 
 # Set this to f0 or f4 depending on which STM32 you're using.
-include ../common/Makefile.gd32f103.include
+# include ../common/Makefile.gd32f103.include
+include ../common/Makefile.stm32f103.include

@@ -18,7 +18,8 @@
  */	
 
 #include <stdlib.h>
-#include <libopencm3/gd32/rcc.h>
+//#include <libopencm3/gd32/rcc.h>
+#include <libopencm3/stm32/rcc.h>
 
 #include "usb_device.h"
 #include "systick.h"
