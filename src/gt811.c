@@ -202,7 +202,7 @@ static const uint8_t gt811_config[]=
 void gt811_write_register(uint16_t reg, uint8_t size, uint8_t *data)
 {
     uint32_t reg32 __attribute__((unused));
-    const uint32_t i2c = I2C2;
+    const uint32_t i2c = I2C1;
 
     /* Send START condition. */
 	i2c_send_start(i2c);
@@ -213,26 +213,26 @@ void gt811_write_register(uint16_t reg, uint8_t size, uint8_t *data)
 		& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
     //send address write
-    i2c_send_7bit_address(I2C2, GT811_ADDRESS >> 1, I2C_WRITE);
+    i2c_send_7bit_address(I2C1, GT811_ADDRESS >> 1, I2C_WRITE);
     
     /* Waiting for address is transferred. */
-    while (!(I2C_SR1(I2C2) & I2C_SR1_ADDR));    
+    while (!(I2C_SR1(I2C1) & I2C_SR1_ADDR));    
 
 	/* Cleaning ADDR condition sequence. */
 	reg32 = I2C_SR2(i2c);    
 
 	i2c_send_data(i2c, reg >> 8); // register MSB
-	while (!(I2C_SR1(I2C2) & (I2C_SR1_BTF | I2C_SR1_TxE)));
+	while (!(I2C_SR1(I2C1) & (I2C_SR1_BTF | I2C_SR1_TxE)));
 
     i2c_send_data(i2c, reg & 0xFF); // register LSB
-	while (!(I2C_SR1(I2C2) & (I2C_SR1_BTF | I2C_SR1_TxE)));
+	while (!(I2C_SR1(I2C1) & (I2C_SR1_BTF | I2C_SR1_TxE)));
 
     int8_t i;
 
     for(i = 0; i < size; i++)
     {
         i2c_send_data(i2c, data[i]); // send data byte
-	    while (!(I2C_SR1(I2C2) & (I2C_SR1_BTF | I2C_SR1_TxE)));
+	    while (!(I2C_SR1(I2C1) & (I2C_SR1_BTF | I2C_SR1_TxE)));
     }
 
     i2c_send_stop(i2c);
@@ -242,7 +242,7 @@ void gt811_write_register(uint16_t reg, uint8_t size, uint8_t *data)
 void gt811_read_register(uint16_t reg, uint8_t size, uint8_t *data)
 {
 	uint32_t reg32 __attribute__((unused));
-	const uint32_t i2c = I2C2;
+	const uint32_t i2c = I2C1;
 
 	/* Send START condition. */
 	i2c_send_start(i2c);
@@ -253,19 +253,19 @@ void gt811_read_register(uint16_t reg, uint8_t size, uint8_t *data)
 		& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
     //send address write
-    i2c_send_7bit_address(I2C2, GT811_ADDRESS >> 1, I2C_WRITE);
+    i2c_send_7bit_address(I2C1, GT811_ADDRESS >> 1, I2C_WRITE);
     
     /* Waiting for address is transferred. */
-    while (!(I2C_SR1(I2C2) & I2C_SR1_ADDR));    
+    while (!(I2C_SR1(I2C1) & I2C_SR1_ADDR));    
 
 	/* Cleaning ADDR condition sequence. */
 	reg32 = I2C_SR2(i2c);    
 
 	i2c_send_data(i2c, reg >> 8); // register MSB
-	while (!(I2C_SR1(I2C2) & (I2C_SR1_BTF | I2C_SR1_TxE)));
+	while (!(I2C_SR1(I2C1) & (I2C_SR1_BTF | I2C_SR1_TxE)));
 
     i2c_send_data(i2c, reg & 0xFF); // register LSB
-	while (!(I2C_SR1(I2C2) & (I2C_SR1_BTF | I2C_SR1_TxE)));
+	while (!(I2C_SR1(I2C1) & (I2C_SR1_BTF | I2C_SR1_TxE)));
 
 	/* RE-START */
 	i2c_send_start(i2c);
@@ -375,22 +375,22 @@ void setup_gt811(void)
     /** setup GPIO */
 	rcc_periph_clock_enable(RCC_GPIOB);     // enable clock for IO port B  
 
-    /** setup I2C2 */
-    rcc_periph_clock_enable(RCC_I2C2);      // Enable clocks for I2C2
+    /** setup I2C1 */
+    rcc_periph_clock_enable(RCC_I2C1);      // Enable clocks for I2C1
 	rcc_periph_clock_enable(RCC_AFIO);      // and AFIO
 	
-    gpio_set_mode(GPIOB,                    // Set alternate functions for the SCL and SDA pins of I2C2. 
+    gpio_set_mode(GPIOB,                    // Set alternate functions for the SCL and SDA pins of I2C1. 
         GPIO_MODE_OUTPUT_50_MHZ,   
         GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-        GPIO_I2C2_SCL | GPIO_I2C2_SDA);            
+        GPIO_I2C1_SCL | GPIO_I2C1_SDA);            
 
-	i2c_peripheral_disable(I2C2);           // Disable the I2C before changing any configuration.
-	i2c_set_clock_frequency(I2C2,           // APB2 is running at 1/2 system clock = 36MHz
+	i2c_peripheral_disable(I2C1);           // Disable the I2C before changing any configuration.
+	i2c_set_clock_frequency(I2C1,           // APB2 is running at 1/2 system clock = 36MHz
         I2C_CR2_FREQ_36MHZ); 
-	i2c_set_fast_mode(I2C2);                // 400KHz - I2C Fast Mode 
-	i2c_set_ccr(I2C2, 0x1e);                // CCR = tlow/tcycle
-    i2c_set_trise(I2C2, 11);
-    i2c_peripheral_enable(I2C2);            // finally start the periph'
+	i2c_set_fast_mode(I2C1);                // 400KHz - I2C Fast Mode 
+	i2c_set_ccr(I2C1, 0x1e);                // CCR = tlow/tcycle
+    i2c_set_trise(I2C1, 11);
+    i2c_peripheral_enable(I2C1);            // finally start the periph'
 
     /** write the configuration array to the GT811 */
     gt811_write_register(GT811_REGISTERS_CONFIGURATION, sizeof(gt811_config), (uint8_t*)gt811_config);
