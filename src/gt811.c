@@ -20,9 +20,9 @@
 //#include <libopencm3/gd32/i2c.h>
 //#include <libopencm3/gd32/gpio.h>
 //#include <libopencm3/gd32/rcc.h>
+#include <libopencm3/stm32/f1/rcc.h>
+#include <libopencm3/stm32/f1/gpio.h>
 #include <libopencm3/stm32/i2c.h>
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/rcc.h>
 #include "usb_device.h"
 #include "systick.h"
 #include "gt811.h"
@@ -372,25 +372,50 @@ struct touch_report *hid_report;
 // setup routine
 void setup_gt811(void)
 {
-    /** setup GPIO */
-	rcc_periph_clock_enable(RCC_GPIOB);     // enable clock for IO port B  
+	/* Enable clocks for i2c1, alternate function and GPIOB peripherals. */
+	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_I2C1EN);
+	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPBEN |
+				                  RCC_APB2ENR_AFIOEN);
 
-    /** setup I2C1 */
-    rcc_periph_clock_enable(RCC_I2C1);      // Enable clocks for I2C1
-	rcc_periph_clock_enable(RCC_AFIO);      // and AFIO
-	
-    gpio_set_mode(GPIOB,                    // Set alternate functions for the SCL and SDA pins of I2C1. 
-        GPIO_MODE_OUTPUT_50_MHZ,   
-        GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-        GPIO_I2C1_SCL | GPIO_I2C1_SDA);            
+	/* Enable remapping of i2c1. */
+	AFIO_MAPR |= AFIO_MAPR_I2C1_REMAP;
 
-	i2c_peripheral_disable(I2C1);           // Disable the I2C before changing any configuration.
-	i2c_set_clock_frequency(I2C1,           // APB2 is running at 1/2 system clock = 36MHz
-        I2C_CR2_FREQ_36MHZ); 
-	i2c_set_fast_mode(I2C1);                // 400KHz - I2C Fast Mode 
-	i2c_set_ccr(I2C1, 0x1e);                // CCR = tlow/tcycle
-    i2c_set_trise(I2C1, 11);
-    i2c_peripheral_enable(I2C1);            // finally start the periph'
+	/* Set alternate functions for the SCL and SDA pins of I2C1. */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
+                      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+                      GPIO_I2C1_RE_SCL | GPIO_I2C1_RE_SDA);
+
+	/* Disable the I2C before changing any configuration. */
+	i2c_peripheral_disable(I2C1);
+
+	/* APB1 is running at 36MHz. */
+	i2c_set_clock_frequency(I2C1, I2C_CR2_FREQ_36MHZ);
+
+	/* 400KHz - I2C Fast Mode */
+	i2c_set_fast_mode(I2C1);
+
+	/*
+         * fclock for I2C is 36MHz APB2 -> cycle time 28ns, low time at 400KHz
+         * incl trise -> Thigh= 1600ns; CCR= tlow/tcycle= 0x1C,9;
+         * datasheet suggests 0x1e.
+         */
+        i2c_set_ccr(I2C1, 0x1e);
+
+	/*
+         * fclock for I2C is 36MHz -> cycle time 28ns, rise time for
+         * 400KHz => 300ns and 100KHz => 1000ns; 300ns/28ns = 10;
+         * incremented by 1 -> 11.
+         */
+        i2c_set_trise(I2C1, 0x0b);
+
+	/*
+         * This is our slave address - needed only if we want to receive from
+         * other masters.
+         */
+        //i2c_set_own_7bit_slave_address(I2C1, I2C1_SLAVE_ADDR);
+
+	/* Reenable the peripheral. */
+        i2c_peripheral_enable(I2C1);
 
     /** write the configuration array to the GT811 */
     gt811_write_register(GT811_REGISTERS_CONFIGURATION, sizeof(gt811_config), (uint8_t*)gt811_config);
