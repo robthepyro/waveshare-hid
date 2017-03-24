@@ -20,8 +20,8 @@
 //#include <libopencm3/gd32/i2c.h>
 //#include <libopencm3/gd32/gpio.h>
 //#include <libopencm3/gd32/rcc.h>
-#include <libopencm3/stm32/f1/rcc.h>
-#include <libopencm3/stm32/f1/gpio.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/i2c.h>
 #include "usb_device.h"
 #include "systick.h"
@@ -373,17 +373,21 @@ struct touch_report *hid_report;
 void setup_gt811(void)
 {
 	/* Enable clocks for i2c1, alternate function and GPIOB peripherals. */
-	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_I2C1EN);
-	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPBEN |
-				                  RCC_APB2ENR_AFIOEN);
+	//rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_I2C1EN);
+	//rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_IOPBEN |
+	//			                  RCC_APB2ENR_AFIOEN);
+	rcc_periph_clock_enable(RCC_I2C1);
+	rcc_periph_clock_enable(RCC_GPIOB);
+	//rcc_set_i2c_clock_hsi(I2C1);
+	i2c_reset(I2C1);
 
 	/* Enable remapping of i2c1. */
-	AFIO_MAPR |= AFIO_MAPR_I2C1_REMAP;
+	//AFIO_MAPR |= AFIO_MAPR_I2C1_REMAP;
 
 	/* Set alternate functions for the SCL and SDA pins of I2C1. */
 	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
                       GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-                      GPIO_I2C1_RE_SCL | GPIO_I2C1_RE_SDA);
+                      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
 
 	/* Disable the I2C before changing any configuration. */
 	i2c_peripheral_disable(I2C1);
